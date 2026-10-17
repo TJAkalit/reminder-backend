@@ -8,6 +8,8 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite+aiosqlite:///./reminder.db"
     database_echo: bool = False
+    # PostgreSQL only: schema for all tables (created by `reminder migrate` if missing).
+    database_schema: str | None = None
 
     telegram_bot_token: str = ""
     # Who may use the bot is stored in the database (chat_access, D-020), not in the config.

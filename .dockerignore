@@ -1,0 +1,16 @@
+# Only pyproject.toml, uv.lock, alembic.ini, migrations/ and src/ are needed for the image.
+.git
+.venv
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+*.db.bak*
+**/__pycache__
+.mypy_cache
+.pytest_cache
+.ruff_cache
+tests
+docs
+openapi.json

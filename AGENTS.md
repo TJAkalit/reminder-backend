@@ -43,7 +43,9 @@
 Python 3.14 (`requires-python >=3.14`), uv, FastAPI, SQLAlchemy 2.1 (async), Alembic, Pydantic v2 + pydantic-settings,
 aiogram 3 (Telegram, long polling), Typer (CLI), ruff, mypy, pytest.
 
-БД: **SQLite (aiosqlite) в разработке → PostgreSQL (asyncpg) перед MVP** (D-003).
+БД: **PostgreSQL 15** (asyncpg) на домашнем сервере 172.16.71.198 (aarch64), БД `reminder`,
+схема `reminder` (`DATABASE_SCHEMA`) — D-003. SQLite (aiosqlite) по-прежнему поддерживается:
+им пользуются быстрые тесты и можно работать локально без сервера.
 Код обязан оставаться переносимым: без диалект-специфичных типов, время через `UTCDateTime`,
 Alembic с `render_as_batch=True`.
 
@@ -103,9 +105,14 @@ uv run reminder openapi -o openapi.json  # схема для генерации 
 uv run reminder admin grant <chat_id>    # назначить админа (и открыть доступ)
 uv run reminder admin list               # кто имеет доступ
 
-uv run pytest                            # тесты
+uv run pytest                            # тесты на SQLite в памяти (быстро)
+TEST_DATABASE_URL=postgresql+asyncpg://reminder:***@172.16.71.198:5432/reminder \
+  uv run pytest                          # те же тесты на PostgreSQL, временная схема на тест
 uv run ruff format . && uv run ruff check .
 uv run mypy src tests                    # strict
+
+docker build -t reminder-backend .       # образ (для сервера: buildx --platform linux/arm64)
+docker run --env-file .env reminder-backend migrate   # роли: api (по умолчанию) | worker | migrate | admin
 ```
 
 На этом ПК `uv` установлен в pyenv: `~/.pyenv/versions/3.14.7/bin/uv` (не в PATH).

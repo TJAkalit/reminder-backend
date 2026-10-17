@@ -91,22 +91,30 @@ Long polling выбран вместо webhook: не нужен публичны
   локальном времени («07:00»), пересчёт через `zoneinfo` — корректно при переходах DST.
 - «День» для серий считается в локальной таймзоне пользователя.
 
-## Деплой — отложено
+## Деплой
 
-> Не прорабатываем до подготовки к запуску. Ниже — исходные наброски.
+Сервер — **aarch64** (ARM): образы для него собираются под `linux/arm64`.
 
-- `reminder-ui`: multi-stage Dockerfile (node → `vite build` → `nginx:alpine` со статикой и
-  конфигом с `try_files $uri /index.html` и proxy `/api`). Один origin → нет CORS.
-- `reminder-backend`: один образ (`python:3.13-slim` + uv), команда задаётся в compose:
-  `api`, `worker`, `migrate` (one-shot, перед стартом api/worker).
-- `docker-compose.yml`: `migrate`, `api`, `worker`, `ui`; PostgreSQL — внешний, уже существует.
-  Где хранить compose — решим позже.
+### Образы (готовы)
+- `reminder-backend/Dockerfile`: uv → `python:3.14-slim`, пользователь `reminder` (uid 10001),
+  `ENTRYPOINT ["reminder"]`, по умолчанию `CMD ["api"]` на `0.0.0.0:8000`. Один образ для всех
+  ролей: `api`, `worker`, `migrate`, `admin …`. Конфигурация — только через env.
+- `reminder-ui/Dockerfile`: `node:24-alpine` (`npm ci && npm run build`) → `nginx:1.29-alpine`.
+  Конфиг `nginx/default.conf.template`: SPA fallback, `/api/` → `${API_UPSTREAM}`
+  (по умолчанию `http://api:8000`), вечный кэш `/assets/*`, `no-cache` для `index.html`, gzip.
+- Секреты (`.env`, токен бота) в образы не попадают (`.dockerignore`); передаются при запуске.
+
+### Ещё не сделано
+- `docker-compose.yml`: `migrate` (one-shot) → `api`, `worker`, `ui`; PostgreSQL внешний.
+  Где хранить compose — решим при запуске.
+- Публикация в `ghcr.io/tjakalit/…` и сборка под arm64 (buildx + qemu или сборка на сервере).
 
 ## Конфигурация (env, pydantic-settings)
 
 | Переменная                  | Пример                                   |
 |-----------------------------|------------------------------------------|
-| `DATABASE_URL`              | dev: `sqlite+aiosqlite:///./reminder.db`; MVP: `postgresql+asyncpg://reminder:***@host/reminder` |
+| `DATABASE_URL`              | `postgresql+asyncpg://reminder:***@172.16.71.198:5432/reminder` (или `sqlite+aiosqlite:///./reminder.db` локально) |
+| `DATABASE_SCHEMA`           | `reminder` (только PostgreSQL) |
 | `TELEGRAM_BOT_TOKEN`        | `123:ABC…`                               |
 | `WORKER_TICK_SECONDS`       | `30`                                     |
 | `WORKER_GRACE_MINUTES`      | `120`                                    |

@@ -17,7 +17,13 @@ Typer (CLI), logging. Инструменты: ruff (lint + format), mypy (strict
 pytest + pytest-asyncio.
 **Почему:** FastAPI и aiogram асинхронные — единый async-стек без смешивания sync/async.
 
-## D-003. СУБД: SQLite сейчас → PostgreSQL перед MVP · `accepted` (2026-10-18)
+## D-003. СУБД: SQLite сейчас → PostgreSQL перед MVP · `accepted` (2026-10-18), выполнено 2026-10-18
+
+**Итог переезда:** сервер PostgreSQL 15 на 172.16.71.198 (aarch64 — образы Docker нужны под
+`linux/arm64`), БД `reminder`, схема `reminder` (`DATABASE_SCHEMA`): в PG 15 обычная роль не
+может создавать объекты в `public`. `reminder migrate` создаёт схему сам. Данные перенесены
+разово, отдельного инструмента экспорта не держим.
+
 **Решение владельца:** разработку начинаем на SQLite (aiosqlite), перед запуском MVP
 переезжаем на уже существующий сервер PostgreSQL (asyncpg).
 **Как не создать себе проблем при переезде:**

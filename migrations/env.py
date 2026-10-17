@@ -3,13 +3,14 @@ from logging.config import fileConfig
 from typing import Literal
 
 from alembic import context
-from sqlalchemy import pool
+from sqlalchemy import pool, text
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
 import src.model  # noqa: F401  (registers all tables on Base.metadata)
 from src.config import get_settings
 from src.db.base import Base, UTCDateTime
+from src.db.session import checked_schema, is_postgres, postgres_connect_args
 
 config = context.config
 
@@ -53,9 +54,21 @@ def do_run_migrations(connection: Connection) -> None:
         context.run_migrations()
 
 
+def _schema() -> str | None:
+    schema = config.attributes.get("schema", get_settings().database_schema)
+    return checked_schema(schema) if schema else None
+
+
 async def run_async_migrations() -> None:
-    engine = create_async_engine(_url(), poolclass=pool.NullPool)
+    url, schema = _url(), _schema()
+    # Not src.db.session.create_engine: SQLite PRAGMA foreign_keys=ON breaks batch-mode table
+    # rebuilds (ON DELETE CASCADE would wipe child rows).
+    connect_args = postgres_connect_args(schema) if is_postgres(url) else {}
+    engine = create_async_engine(url, poolclass=pool.NullPool, connect_args=connect_args)
     async with engine.connect() as connection:
+        if connect_args and schema:
+            await connection.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{schema}"'))
+            await connection.commit()
         await connection.run_sync(do_run_migrations)
     await engine.dispose()
 

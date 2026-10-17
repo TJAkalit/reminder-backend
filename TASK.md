@@ -57,12 +57,18 @@
 - [ ] Проверить заявку вживую со второго Telegram-аккаунта
 
 ## Этап 5. Переезд на PostgreSQL (перед MVP)
-- [ ] Добавить зависимость asyncpg, прогнать миграции на существующем сервере PostgreSQL
-- [ ] Прогон тестов на PostgreSQL
-- [ ] Перенос данных из SQLite (скрипт `reminder export/import` или одноразовый)
+- [x] asyncpg, настройка `DATABASE_SCHEMA` (в `public` у роли нет CREATE — PG 15), пулы 5+5
+- [x] Миграции на сервере 172.16.71.198 (PG 15, aarch64), схема `reminder`
+- [x] Все тесты проходят на PostgreSQL (`TEST_DATABASE_URL`, временная схема на тест)
+- [x] Разовый перенос данных из SQLite (копия: `reminder.db.bak-before-postgres`), рабочий `.env` → PG
+
+## Этап 6. Деплой на домашний сервер (aarch64)
+- [x] Dockerfile (uv, multi-stage, non-root, один образ на все роли); проверен на amd64 с PostgreSQL
+- [ ] Собрать под `linux/arm64` (buildx + qemu на ПК или `docker build` на самом сервере)
+- [ ] Опубликовать в ghcr.io (`ghcr.io/tjakalit/reminder-backend`)
+- [ ] docker-compose: migrate → api, worker, ui; где хранить — решить
 
 ## Отложено
-- [ ] Деплой: Dockerfile, compose, где хранить конфигурацию — вернёмся при подготовке к запуску
 - [ ] Бэкапы БД
 
 ## Бэклог / идеи
