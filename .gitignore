@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Reminder
+reminder.db
+reminder.db-*
+reminder.db.bak*
+openapi.json
